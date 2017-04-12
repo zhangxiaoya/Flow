@@ -20,7 +20,9 @@ private:
 
 	static void ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G);
 
-	static Mat mergeRows(Mat& left, Mat& right);
+	static Mat mergeTwoRows(Mat& up, Mat& down);
+
+	static Mat mergeTwoCols(Mat left, Mat right);
 
 	static Mat ResampleImg(Mat& img, Rect& rect, vector<double> disc);
 
@@ -143,24 +145,38 @@ inline void LKOFlow::ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G)
 	auto reshapedX = deepCopyedX.reshape(0, deepCopyedX.rows * deepCopyedX.cols);
 	auto reshapedY = deepCopyedY.reshape(0, deepCopyedY.rows * deepCopyedY.cols);
 
-	auto H = mergeRows(reshapedX, reshapedY);
+	auto H = mergeTwoCols(reshapedX, reshapedY);
 	Ht = H.t();
 
 	G = Ht * H;
 }
 
-inline Mat LKOFlow::mergeRows(Mat& left, Mat& right)
+inline Mat LKOFlow::mergeTwoRows(Mat& up, Mat& down)
 {
-	auto totalRows = left.rows + right.rows;
+	auto totalRows = up.rows + down.rows;
 
-	Mat mergedMat(totalRows, left.cols, left.type());
+	Mat mergedMat(totalRows, up.cols, up.type());
 
-	auto submat = mergedMat.rowRange(0, left.rows);
-	left.copyTo(submat);
-	submat = mergedMat.rowRange(left.rows, totalRows);
-	right.copyTo(submat);
+	auto submat = mergedMat.rowRange(0, up.rows);
+	up.copyTo(submat);
+	submat = mergedMat.rowRange(up.rows, totalRows);
+	down.copyTo(submat);
 
 	return mergedMat;
+}
+
+inline Mat LKOFlow::mergeTwoCols(Mat left, Mat right)
+{
+	auto totalCols = left.cols + right.cols;
+
+	Mat mergedDescriptors(left.rows, totalCols, left.type());
+
+	auto submat = mergedDescriptors.colRange(0, left.cols);
+	left.copyTo(submat);
+	submat = mergedDescriptors.colRange(left.cols, totalCols);
+	right.copyTo(submat);
+
+	return mergedDescriptors;
 }
 
 inline Mat LKOFlow::ResampleImg(Mat& img, Rect& rect, vector<double> disc)
