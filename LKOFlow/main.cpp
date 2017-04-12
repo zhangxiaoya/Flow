@@ -1,7 +1,7 @@
 #include <iostream>
-#include <opencv2\core\core.hpp>
-#include <opencv2\highgui\highgui.hpp>
-#include <opencv2\imgproc\imgproc.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include "LKOFlow.hpp"
 
@@ -10,8 +10,8 @@ using namespace std;
 
 int main()
 {
-	Mat img1 = imread("1.jpg");
-	Mat img2 = imread("2.jpg");
+	auto img1 = imread("1.jpg");
+	auto img2 = imread("2.jpg");
 	Mat graImg1;
 	Mat graImg2;
 
@@ -37,7 +37,7 @@ int main()
 
 	Rect roi(1, 1, graImg1.cols - 2, graImg1.rows - 2);
 
-	vector<double> disc = LKOFlow::PyramidalLKOpticalFlow(graImg1, graImg2, roi);
+	auto disc = LKOFlow::PyramidalLKOpticalFlow(graImg1, graImg2, roi);
 
 	destroyAllWindows();
 	return 0;

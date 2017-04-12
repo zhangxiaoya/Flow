@@ -1,6 +1,7 @@
-#include <opencv2\core/core.hpp>
-#include <opencv2\highgui\highgui.hpp>
-#include <opencv2\imgproc\imgproc.hpp>
+#pragma once
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 #include <cmath>
 
@@ -26,15 +27,15 @@ private:
 	static void Meshgrid(const Range &xgv, const Range &ygv, Mat &X, Mat &Y);
 };
 
-vector<double> LKOFlow::PyramidalLKOpticalFlow(Mat& img1, Mat& img2, Rect& ROI)
+inline vector<double> LKOFlow::PyramidalLKOpticalFlow(Mat& img1, Mat& img2, Rect& ROI)
 {
 	Mat image1, image2;
 	img1.convertTo(image1,CV_32F);
 	img2.convertTo(image2,CV_32F);
 
-	Size ROISize =  ROI.size();
+	auto ROISize =  ROI.size();
 
-	int levels = min(6, (int)floor(log2(min(ROISize.height, ROISize.width)) - 2));
+	auto levels = min(6, static_cast<int>(floor(log2(min(ROISize.height, ROISize.width)) - 2)));
 
 	vector<Mat> image1Pyramid;
 	vector<Mat> image2Pyramid;
@@ -46,12 +47,12 @@ vector<double> LKOFlow::PyramidalLKOpticalFlow(Mat& img1, Mat& img2, Rect& ROI)
 
 	vector<double> disc = { 0.0,0.0 };
 
-	for (int curLevel = levels; curLevel >= 0; --curLevel)
+	for (auto curLevel = levels; curLevel >= 0; --curLevel)
 	{
 		disc[0] *= 2;
 		disc[1] *= 2;
 
-		double scale = pow(2, curLevel - 1);
+		auto scale = pow(2, curLevel - 1);
 
 		Point topLeft;
 		topLeft.x = max(static_cast<int>(ceil(ROI.x / scale)),2);
@@ -91,21 +92,21 @@ inline void LKOFlow::GaussianPyramid(Mat& img, vector<Mat>& pyramid, int levels)
 	}
 }
 
-void LKOFlow::IterativeLKOpticalFlow(Mat& Pyramid1, Mat& Pyramid2, Point topLeft, Point bottomRight, vector<double>& disc)
+inline void LKOFlow::IterativeLKOpticalFlow(Mat& Pyramid1, Mat& Pyramid2, Point topLeft, Point bottomRight, vector<double>& disc)
 {
-	vector<double> oldDisc = disc;
+	auto oldDisc = disc;
 
-	int K = 10;
-	double stopThrashold = 0.01;
+	auto K = 10;
+//	auto stopThrashold = 0.01;
 
 	Rect ROIRect(topLeft,bottomRight);
-	//Mat pimg1 = Pyramid1(ROIRect);
+//	Mat pimg1 = Pyramid1(ROIRect);
 
 	Mat Ht, G;
 
 	ComputeLKFlowParms(Pyramid1, Ht,G);
 
-	int k = 1;
+	auto k = 1;
 	while (k < K)
 	{
 		Mat It = Pyramid1 - ResampleImg(Pyramid2, ROIRect, disc);
@@ -126,31 +127,31 @@ void LKOFlow::IterativeLKOpticalFlow(Mat& Pyramid1, Mat& Pyramid2, Point topLeft
 	}
 }
 
-void LKOFlow::ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G)
+inline void LKOFlow::ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G)
 {
 	Mat SobelX, SobelY;
 	Sobel(img, SobelX, CV_32F, 1, 0);
 	Sobel(img, SobelY, CV_32F, 0, 1);
 
-	Mat X = SobelX(Rect(2, 2, SobelX.cols - 2, SobelX.rows - 2));
-	Mat Y = SobelY(Rect(2, 2, SobelY.cols - 2, SobelY.rows - 2));
+	auto X = SobelX(Rect(2, 2, SobelX.cols - 2, SobelX.rows - 2));
+	auto Y = SobelY(Rect(2, 2, SobelY.cols - 2, SobelY.rows - 2));
 
 	X.reshape(0,X.rows * X.cols);
 	Y.reshape(0,Y.rows * Y.cols);
 
-	Mat H = mergeRows(X, Y);
+	auto H = mergeRows(X, Y);
 	Ht = H.t();
 
 	G = Ht*H;
 }
 
-Mat LKOFlow::mergeRows(Mat& left, Mat& right)
+inline Mat LKOFlow::mergeRows(Mat& left, Mat& right)
 {
-	int totalRows = left.rows + right.rows;
+	auto totalRows = left.rows + right.rows;
 
 	Mat mergedMat(totalRows, left.cols, left.type());
 
-	Mat submat = mergedMat.rowRange(0, left.rows);
+	auto submat = mergedMat.rowRange(0, left.rows);
 	left.copyTo(submat);
 	submat = mergedMat.rowRange(left.rows, totalRows);
 	right.copyTo(submat);
@@ -158,11 +159,11 @@ Mat LKOFlow::mergeRows(Mat& left, Mat& right)
 	return mergedMat;
 }
 
-Mat LKOFlow::ResampleImg(Mat& img, Rect& rect, vector<double> disc)
+inline Mat LKOFlow::ResampleImg(Mat& img, Rect& rect, vector<double> disc)
 {
 	Mat X, Y;
-	Point leftTop = rect.tl();
-	Point bottomeRight = rect.br();
+	auto leftTop = rect.tl();
+	auto bottomeRight = rect.br();
 
 	Meshgrid(Range(leftTop.x, bottomeRight.x) - disc[0], Range(leftTop.y, bottomeRight.y) - disc[1], X, Y);
 	Mat result;
@@ -170,13 +171,13 @@ Mat LKOFlow::ResampleImg(Mat& img, Rect& rect, vector<double> disc)
 	return result;
 }
 
-void LKOFlow::Meshgrid(const Range &xgv, const Range &ygv, Mat &X, Mat &Y)
+inline void LKOFlow::Meshgrid(const Range &xgv, const Range &ygv, Mat &X, Mat &Y)
 {
 	vector<int> t_x, t_y;
 
-	for (int i = xgv.start; i <= xgv.end; i++) 
+	for (auto i = xgv.start; i <= xgv.end; i++) 
 		t_x.push_back(i);
-	for (int j = ygv.start; j <= ygv.end; j++) 
+	for (auto j = ygv.start; j <= ygv.end; j++) 
 		t_y.push_back(j);
 
 	cv::repeat(cv::Mat(t_x).t(), t_y.size(), 1, X);
