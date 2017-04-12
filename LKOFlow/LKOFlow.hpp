@@ -19,12 +19,12 @@ private:
 	static void IterativeLKOpticalFlow(Mat& Pyramid1, Mat& Pyramid2, Point topLeft, Point bottomRight, vector<double>& disc);
 
 	static void ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G);
-	
+
 	static Mat mergeRows(Mat& left, Mat& right);
 
 	static Mat ResampleImg(Mat& img, Rect& rect, vector<double> disc);
 
-	static void Meshgrid(const Range &xgv, const Range &ygv, Mat &X, Mat &Y);
+	static void Meshgrid(const Range& xgv, const Range& ygv, Mat& X, Mat& Y);
 };
 
 inline vector<double> LKOFlow::PyramidalLKOpticalFlow(Mat& img1, Mat& img2, Rect& ROI)
@@ -33,7 +33,7 @@ inline vector<double> LKOFlow::PyramidalLKOpticalFlow(Mat& img1, Mat& img2, Rect
 	img1.convertTo(image1,CV_32F);
 	img2.convertTo(image2,CV_32F);
 
-	auto ROISize =  ROI.size();
+	auto ROISize = ROI.size();
 
 	auto levels = min(6, static_cast<int>(floor(log2(min(ROISize.height, ROISize.width)) - 2)));
 
@@ -45,26 +45,26 @@ inline vector<double> LKOFlow::PyramidalLKOpticalFlow(Mat& img1, Mat& img2, Rect
 	GaussianPyramid(image1, image1Pyramid, levels);
 	GaussianPyramid(image2, image2Pyramid, levels);
 
-	vector<double> disc = { 0.0,0.0 };
+	vector<double> disc = {0.0,0.0};
 
-	for (auto curLevel = levels; curLevel >= 0; --curLevel)
+	for (auto curLevel = levels - 1; curLevel >= 0; --curLevel)
 	{
 		disc[0] *= 2;
 		disc[1] *= 2;
 
-		auto scale = pow(2, curLevel - 1);
+		auto scale = pow(2, curLevel);
 
 		Point topLeft;
-		topLeft.x = max(static_cast<int>(ceil(ROI.x / scale)),2);
-		topLeft.y = max(static_cast<int>(ceil(ROI.y / scale)),2);
+		topLeft.x = max(static_cast<int>(ceil(ROI.x / scale)), 1);
+		topLeft.y = max(static_cast<int>(ceil(ROI.y / scale)), 1);
 
 		Size curSize;
 		curSize.width = floor(ROISize.width / scale);
 		curSize.height = floor(ROISize.height / scale);
 
 		Point bottomRight;
-		bottomRight.x = min(topLeft.x + curSize.width - 1, image1Pyramid[curLevel].size().width -1);
-		bottomRight.y = min(topLeft.y + curSize.height - 1, image1Pyramid[curLevel].size().height -1);
+		bottomRight.x = min(topLeft.x + curSize.width - 1, image1Pyramid[curLevel].size().width - 1);
+		bottomRight.y = min(topLeft.y + curSize.height - 1, image1Pyramid[curLevel].size().height - 1);
 
 		IterativeLKOpticalFlow(image1Pyramid[curLevel], image2Pyramid[curLevel], topLeft, bottomRight, disc);
 	}
@@ -97,31 +97,31 @@ inline void LKOFlow::IterativeLKOpticalFlow(Mat& Pyramid1, Mat& Pyramid2, Point 
 	auto oldDisc = disc;
 
 	auto K = 10;
-//	auto stopThrashold = 0.01;
+	//	auto stopThrashold = 0.01;
 
-	Rect ROIRect(topLeft,bottomRight);
-//	Mat pimg1 = Pyramid1(ROIRect);
+	Rect ROIRect(topLeft, bottomRight);
+	//	Mat pimg1 = Pyramid1(ROIRect);
 
 	Mat Ht, G;
 
-	ComputeLKFlowParms(Pyramid1, Ht,G);
+	ComputeLKFlowParms(Pyramid1, Ht, G);
 
 	auto k = 1;
 	while (k < K)
 	{
 		Mat It = Pyramid1 - ResampleImg(Pyramid2, ROIRect, disc);
 
-		It.reshape(0, It.rows* It.cols);
+		It.reshape(0, It.rows * It.cols);
 
 		Mat b = Ht * It;
-		
+
 		Mat invertG;
 		invert(G, invertG);
 
 		Mat dc = invertG * b;
 
-		disc[0] += dc.at<uchar>(0,0);
-		disc[1] += dc.at<uchar>(0,1);
+		disc[0] += dc.at<uchar>(0, 0);
+		disc[1] += dc.at<uchar>(0, 1);
 
 		k++;
 	}
@@ -136,13 +136,17 @@ inline void LKOFlow::ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G)
 	auto X = SobelX(Rect(2, 2, SobelX.cols - 2, SobelX.rows - 2));
 	auto Y = SobelY(Rect(2, 2, SobelY.cols - 2, SobelY.rows - 2));
 
-	X.reshape(0,X.rows * X.cols);
-	Y.reshape(0,Y.rows * Y.cols);
+	Mat deepCopyedX,deepCopyedY;
+	X.copyTo(deepCopyedX);
+	Y.copyTo(deepCopyedY);
 
-	auto H = mergeRows(X, Y);
+	auto reshapedX = deepCopyedX.reshape(0, deepCopyedX.rows * deepCopyedX.cols);
+	auto reshapedY = deepCopyedY.reshape(0, deepCopyedY.rows * deepCopyedY.cols);
+
+	auto H = mergeRows(reshapedX, reshapedY);
 	Ht = H.t();
 
-	G = Ht*H;
+	G = Ht * H;
 }
 
 inline Mat LKOFlow::mergeRows(Mat& left, Mat& right)
@@ -171,13 +175,13 @@ inline Mat LKOFlow::ResampleImg(Mat& img, Rect& rect, vector<double> disc)
 	return result;
 }
 
-inline void LKOFlow::Meshgrid(const Range &xgv, const Range &ygv, Mat &X, Mat &Y)
+inline void LKOFlow::Meshgrid(const Range& xgv, const Range& ygv, Mat& X, Mat& Y)
 {
 	vector<int> t_x, t_y;
 
-	for (auto i = xgv.start; i <= xgv.end; i++) 
+	for (auto i = xgv.start; i <= xgv.end; i++)
 		t_x.push_back(i);
-	for (auto j = ygv.start; j <= ygv.end; j++) 
+	for (auto j = ygv.start; j <= ygv.end; j++)
 		t_y.push_back(j);
 
 	cv::repeat(cv::Mat(t_x).t(), t_y.size(), 1, X);
