@@ -65,8 +65,8 @@ inline vector<double> LKOFlow::PyramidalLKOpticalFlow(Mat& img1, Mat& img2, Rect
 		curSize.height = floor(ROISize.height / scale);
 
 		Point bottomRight;
-		bottomRight.x = min(topLeft.x + curSize.width - 2, image1Pyramid[curLevel].size().width - 2);
-		bottomRight.y = min(topLeft.y + curSize.height - 2, image1Pyramid[curLevel].size().height - 2);
+		bottomRight.x = min(topLeft.x + curSize.width - 1, image1Pyramid[curLevel].size().width - 1);
+		bottomRight.y = min(topLeft.y + curSize.height - 1, image1Pyramid[curLevel].size().height - 1);
 
 		IterativeLKOpticalFlow(image1Pyramid[curLevel], image2Pyramid[curLevel], topLeft, bottomRight, disc);
 	}
@@ -107,7 +107,6 @@ inline void LKOFlow::IterativeLKOpticalFlow(Mat& img1, Mat& img2, Point topLeft,
 	auto img1Rect = img1(newROIRect);
 
 	Mat Ht, G;
-
 	ComputeLKFlowParms(img1, Ht, G);
 
 	auto k = 1;
@@ -139,8 +138,8 @@ inline void LKOFlow::ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G)
 	Sobel(img, SobelX, CV_32F, 1, 0);
 	Sobel(img, SobelY, CV_32F, 0, 1);
 
-	auto X = SobelX(Rect(1, 1, SobelX.cols-2, SobelX.rows-2));
-	auto Y = SobelY(Rect(1, 1, SobelY.cols-2, SobelY.rows-2));
+	auto X = SobelX(Rect(1, 1, SobelX.cols-1, SobelX.rows-1));
+	auto Y = SobelY(Rect(1, 1, SobelY.cols-1, SobelY.rows-1));
 
 	Mat deepCopyedX,deepCopyedY;
 	X.copyTo(deepCopyedX);

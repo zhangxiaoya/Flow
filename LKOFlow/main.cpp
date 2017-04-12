@@ -36,7 +36,6 @@ int main()
 	}
 
 	Rect roi(1, 1, graImg1.cols - 2, graImg1.rows - 2);
-
 	auto disc = LKOFlow::PyramidalLKOpticalFlow(graImg1, graImg2, roi);
 
 	destroyAllWindows();
