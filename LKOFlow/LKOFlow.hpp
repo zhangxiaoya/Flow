@@ -22,9 +22,9 @@ private:
 
 	static void ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G);
 
-	static Mat mergeTwoRows(Mat& up, Mat& down);
+	static Mat MergeTwoRows(Mat& up, Mat& down);
 
-	static Mat mergeTwoCols(Mat left, Mat right);
+	static Mat MergeTwoCols(Mat left, Mat right);
 
 	static Mat ResampleImg(Mat& img, Rect& rect, vector<double> disc);
 
@@ -49,31 +49,31 @@ inline vector<double> LKOFlow::PyramidalLKOpticalFlow(Mat& img1, Mat& img2, Rect
 	GaussianPyramid(image1, image1Pyramid, levels);
 	GaussianPyramid(image2, image2Pyramid, levels);
 
-	vector<double> disc = {0.0,0.0};
+	vector<double> distance = {0.0,0.0};
 
-	for (auto curLevel = levels - 1; curLevel >= 0; --curLevel)
+	for (auto currentLevel = levels - 1; currentLevel >= 0; --currentLevel)
 	{
-		disc[0] *= 2;
-		disc[1] *= 2;
+		distance[0] *= 2;
+		distance[1] *= 2;
 
-		auto scale = pow(2, curLevel);
+		auto scale = pow(2, currentLevel);
 
 		Point topLeft;
 		topLeft.x = max(static_cast<int>(ceil(ROI.x / scale)), 1);
 		topLeft.y = max(static_cast<int>(ceil(ROI.y / scale)), 1);
 
-		Size curSize;
-		curSize.width = floor(ROISize.width / scale);
-		curSize.height = floor(ROISize.height / scale);
+		Size currentSize;
+		currentSize.width = floor(ROISize.width / scale);
+		currentSize.height = floor(ROISize.height / scale);
 
 		Point bottomRight;
-		bottomRight.x = min(topLeft.x + curSize.width - 1, image1Pyramid[curLevel].size().width - 1);
-		bottomRight.y = min(topLeft.y + curSize.height - 1, image1Pyramid[curLevel].size().height - 1);
+		bottomRight.x = min(topLeft.x + currentSize.width - 1, image1Pyramid[currentLevel].size().width - 1);
+		bottomRight.y = min(topLeft.y + currentSize.height - 1, image1Pyramid[currentLevel].size().height - 1);
 
-		IterativeLKOpticalFlow(image1Pyramid[curLevel], image2Pyramid[curLevel], topLeft, bottomRight, disc);
+		IterativeLKOpticalFlow(image1Pyramid[currentLevel], image2Pyramid[currentLevel], topLeft, bottomRight, distance);
 	}
 
-	return disc;
+	return distance;
 }
 
 inline void LKOFlow::GaussianPyramid(Mat& img, vector<Mat>& pyramid, int levels)
@@ -97,15 +97,18 @@ inline void LKOFlow::GaussianPyramid(Mat& img, vector<Mat>& pyramid, int levels)
 
 inline double LKOFlow::MyNorm(const Mat& mat)
 {
+	/*
+	 * special use: Mat is a (2*1) vector, only get norm of this vector
+	 */
 	double sum = mat.at<float>(0, 0) * mat.at<float>(0, 0) + mat.at<float>(1, 0) * mat.at<float>(1, 0);
 	return sqrt(sum);
 }
 
-inline void LKOFlow::IterativeLKOpticalFlow(Mat& img1, Mat& img2, Point topLeft, Point bottomRight, vector<double>& disc)
+inline void LKOFlow::IterativeLKOpticalFlow(Mat& img1, Mat& img2, Point topLeft, Point bottomRight, vector<double>& distance)
 {
-	auto oldDisc = disc;
+	auto oldDistance = distance;
 
-	auto K = 10;
+	auto maxIterativeCount = 10;
 	auto stopThrashold = 0.01;
 	Rect ROIRect(topLeft, bottomRight);
 	auto img1Rect = img1(ROIRect);
@@ -113,11 +116,11 @@ inline void LKOFlow::IterativeLKOpticalFlow(Mat& img1, Mat& img2, Point topLeft,
 	Mat Ht, G;
 	ComputeLKFlowParms(img1, Ht, G);
 
-	auto k = 1;
+	auto currentIterativeIndex = 1;
 	double normDistrance = 1;
-	while (k < K && normDistrance > stopThrashold)
+	while (currentIterativeIndex < maxIterativeCount && normDistrance > stopThrashold)
 	{
-		auto resample_img = ResampleImg(img2, ROIRect, disc);
+		auto resample_img = ResampleImg(img2, ROIRect, distance);
 		Mat It = img1Rect - resample_img;
 
 		auto newIt = It.reshape(0, It.rows * It.cols);
@@ -131,10 +134,10 @@ inline void LKOFlow::IterativeLKOpticalFlow(Mat& img1, Mat& img2, Point topLeft,
 
 		normDistrance = MyNorm(dc);
 
-		disc[0] += dc.at<float>(0, 0);
-		disc[1] += dc.at<float>(1, 0);
+		distance[0] += dc.at<float>(0, 0);
+		distance[1] += dc.at<float>(1, 0);
 
-		k++;
+		currentIterativeIndex++;
 	}
 }
 
@@ -144,23 +147,23 @@ inline void LKOFlow::ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G)
 	Sobel(img, SobelX, CV_32F, 1, 0);
 	Sobel(img, SobelY, CV_32F, 0, 1);
 
-	auto X = SobelX(Rect(1, 1, SobelX.cols-2, SobelX.rows-2));
-	auto Y = SobelY(Rect(1, 1, SobelY.cols-2, SobelY.rows-2));
+	auto rectSobelX = SobelX(Rect(1, 1, SobelX.cols - 2, SobelX.rows - 2));
+	auto rectSobelY = SobelY(Rect(1, 1, SobelY.cols - 2, SobelY.rows - 2));
 
-	Mat deepCopyedX,deepCopyedY;
-	X.copyTo(deepCopyedX);
-	Y.copyTo(deepCopyedY);
+	Mat deepCopyedX, deepCopyedY;
+	rectSobelX.copyTo(deepCopyedX);
+	rectSobelY.copyTo(deepCopyedY);
 
 	auto reshapedX = deepCopyedX.reshape(0, deepCopyedX.rows * deepCopyedX.cols);
 	auto reshapedY = deepCopyedY.reshape(0, deepCopyedY.rows * deepCopyedY.cols);
 
-	auto H = mergeTwoCols(reshapedX, reshapedY);
+	auto H = MergeTwoCols(reshapedX, reshapedY);
 	Ht = H.t();
 
 	G = Ht * H;
 }
 
-inline Mat LKOFlow::mergeTwoRows(Mat& up, Mat& down)
+inline Mat LKOFlow::MergeTwoRows(Mat& up, Mat& down)
 {
 	auto totalRows = up.rows + down.rows;
 
@@ -174,7 +177,7 @@ inline Mat LKOFlow::mergeTwoRows(Mat& up, Mat& down)
 	return mergedMat;
 }
 
-inline Mat LKOFlow::mergeTwoCols(Mat left, Mat right)
+inline Mat LKOFlow::MergeTwoCols(Mat left, Mat right)
 {
 	auto totalCols = left.cols + right.cols;
 
