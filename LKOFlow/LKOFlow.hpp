@@ -65,8 +65,8 @@ inline vector<double> LKOFlow::PyramidalLKOpticalFlow(Mat& img1, Mat& img2, Rect
 		curSize.height = floor(ROISize.height / scale);
 
 		Point bottomRight;
-		bottomRight.x = min(topLeft.x + curSize.width - 1, image1Pyramid[curLevel].size().width - 1);
-		bottomRight.y = min(topLeft.y + curSize.height - 1, image1Pyramid[curLevel].size().height - 1);
+		bottomRight.x = min(topLeft.x + curSize.width - 2, image1Pyramid[curLevel].size().width - 2);
+		bottomRight.y = min(topLeft.y + curSize.height - 2, image1Pyramid[curLevel].size().height - 2);
 
 		IterativeLKOpticalFlow(image1Pyramid[curLevel], image2Pyramid[curLevel], topLeft, bottomRight, disc);
 	}
@@ -113,7 +113,7 @@ inline void LKOFlow::IterativeLKOpticalFlow(Mat& Pyramid1, Mat& Pyramid2, Point 
 	{
 		Mat It = Pyramid1 - ResampleImg(Pyramid2, ROIRect, disc);
 
-		It.reshape(0, It.rows * It.cols);
+		auto newIt = It.reshape(0, It.rows * It.cols);
 
 		Mat b = Ht * It;
 
@@ -186,8 +186,14 @@ inline Mat LKOFlow::ResampleImg(Mat& img, Rect& rect, vector<double> disc)
 	auto bottomeRight = rect.br();
 
 	Meshgrid(Range(leftTop.x, bottomeRight.x) - disc[0], Range(leftTop.y, bottomeRight.y) - disc[1], X, Y);
+
+	Mat formatX, formatY;
+	X.convertTo(formatX, CV_32FC1);
+	Y.convertTo(formatY, CV_32FC1);
+
 	Mat result;
-	remap(img, result, X, Y, INTER_LINEAR);
+	remap(img, result, formatX, formatY, INTER_LINEAR);
+
 	return result;
 }
 
