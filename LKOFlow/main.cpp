@@ -39,5 +39,9 @@ int main()
 	auto disc = LKOFlow::PyramidalLKOpticalFlow(graImg1, graImg2, roi);
 
 	destroyAllWindows();
+
+	cout << disc[0] << endl << disc[1] << endl;
+	int a;
+	cin >> a;
 	return 0;
 }

@@ -16,6 +16,8 @@ public:
 private:
 	static void GaussianPyramid(Mat& img, vector<Mat>& pyramid, int levels);
 
+	static double MyNorm(const Mat& mat);
+
 	static void IterativeLKOpticalFlow(Mat& Pyramid1, Mat& Pyramid2, Point topLeft, Point bottomRight, vector<double>& disc);
 
 	static void ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G);
@@ -93,12 +95,18 @@ inline void LKOFlow::GaussianPyramid(Mat& img, vector<Mat>& pyramid, int levels)
 	}
 }
 
+inline double LKOFlow::MyNorm(const Mat& mat)
+{
+	double sum = mat.at<float>(0, 0) * mat.at<float>(0, 0) + mat.at<float>(1, 0) * mat.at<float>(1, 0);
+	return sqrt(sum);
+}
+
 inline void LKOFlow::IterativeLKOpticalFlow(Mat& img1, Mat& img2, Point topLeft, Point bottomRight, vector<double>& disc)
 {
 	auto oldDisc = disc;
 
 	auto K = 10;
-	//	auto stopThrashold = 0.01;
+	auto stopThrashold = 0.01;
 	Rect ROIRect(topLeft, bottomRight);
 	auto img1Rect = img1(ROIRect);
 
@@ -106,7 +114,8 @@ inline void LKOFlow::IterativeLKOpticalFlow(Mat& img1, Mat& img2, Point topLeft,
 	ComputeLKFlowParms(img1, Ht, G);
 
 	auto k = 1;
-	while (k < K)
+	double normDistrance = 1;
+	while (k < K && normDistrance > stopThrashold)
 	{
 		auto resample_img = ResampleImg(img2, ROIRect, disc);
 		Mat It = img1Rect - resample_img;
@@ -119,6 +128,8 @@ inline void LKOFlow::IterativeLKOpticalFlow(Mat& img1, Mat& img2, Point topLeft,
 		invert(G, invertG);
 
 		Mat dc = invertG * b;
+
+		normDistrance = MyNorm(dc);
 
 		disc[0] += dc.at<float>(0, 0);
 		disc[1] += dc.at<float>(1, 0);
