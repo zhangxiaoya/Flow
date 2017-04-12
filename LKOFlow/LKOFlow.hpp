@@ -79,8 +79,7 @@ inline void LKOFlow::GaussianPyramid(Mat& img, vector<Mat>& pyramid, int levels)
 	img.copyTo(pyramid[0]);
 
 	auto scale = 2.0;
-
-	Mat srcImg = img;
+	auto srcImg = img;
 
 	for (auto i = 1; i < levels; ++i)
 	{
@@ -94,39 +93,44 @@ inline void LKOFlow::GaussianPyramid(Mat& img, vector<Mat>& pyramid, int levels)
 	}
 }
 
-inline void LKOFlow::IterativeLKOpticalFlow(Mat& Pyramid1, Mat& Pyramid2, Point topLeft, Point bottomRight, vector<double>& disc)
+inline void LKOFlow::IterativeLKOpticalFlow(Mat& img1, Mat& img2, Point topLeft, Point bottomRight, vector<double>& disc)
 {
 	auto oldDisc = disc;
 
 	auto K = 10;
 	//	auto stopThrashold = 0.01;
-
 	Rect ROIRect(topLeft, bottomRight);
-	//	Mat pimg1 = Pyramid1(ROIRect);
+
+	auto newROIRect = ROIRect;
+	newROIRect.width++;
+	newROIRect.height++;
+	auto img1Rect = img1(newROIRect);
 
 	Mat Ht, G;
 
-	ComputeLKFlowParms(Pyramid1, Ht, G);
+	ComputeLKFlowParms(img1, Ht, G);
 
 	auto k = 1;
 	while (k < K)
 	{
-		Mat It = Pyramid1 - ResampleImg(Pyramid2, ROIRect, disc);
+		auto resample_img = ResampleImg(img2, ROIRect, disc);
+		Mat It = img1Rect - resample_img;
 
 		auto newIt = It.reshape(0, It.rows * It.cols);
 
-		Mat b = Ht * It;
+		Mat b = Ht * newIt;
 
 		Mat invertG;
 		invert(G, invertG);
 
 		Mat dc = invertG * b;
 
-		disc[0] += dc.at<uchar>(0, 0);
-		disc[1] += dc.at<uchar>(0, 1);
+		disc[0] += dc.at<float>(0, 0);
+		disc[1] += dc.at<float>(1, 0);
 
 		k++;
 	}
+
 }
 
 inline void LKOFlow::ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G)
@@ -135,8 +139,8 @@ inline void LKOFlow::ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G)
 	Sobel(img, SobelX, CV_32F, 1, 0);
 	Sobel(img, SobelY, CV_32F, 0, 1);
 
-	auto X = SobelX(Rect(2, 2, SobelX.cols - 2, SobelX.rows - 2));
-	auto Y = SobelY(Rect(2, 2, SobelY.cols - 2, SobelY.rows - 2));
+	auto X = SobelX(Rect(1, 1, SobelX.cols-2, SobelX.rows-2));
+	auto Y = SobelY(Rect(1, 1, SobelY.cols-2, SobelY.rows-2));
 
 	Mat deepCopyedX,deepCopyedY;
 	X.copyTo(deepCopyedX);
