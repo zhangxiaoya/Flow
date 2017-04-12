@@ -68,6 +68,7 @@ vector<double> LKOFlow::PyramidalLKOpticalFlow(Mat& img1, Mat& img2, Rect& ROI)
 		IterativeLKOpticalFlow(image1Pyramid[curLevel], image2Pyramid[curLevel], topLeft, bottomRight, disc);
 	}
 
+	return disc;
 }
 
 void LKOFlow::GaussianPyramid(Mat& img, vector<Mat>& pyramid, int levels)
@@ -109,8 +110,8 @@ void LKOFlow::IterativeLKOpticalFlow(Mat& Pyramid1, Mat& Pyramid2, Point topLeft
 
 		Mat dc = invertG * b;
 
-		disc[0] += dc.at[0];
-		disc[1] += dc.at[1];
+		disc[0] += dc.at<uchar>(0,0);
+		disc[1] += dc.at<uchar>(0,1);
 
 		k++;
 	}
@@ -151,7 +152,10 @@ Mat LKOFlow::mergeRows(Mat& left, Mat& right)
 Mat LKOFlow::ResampleImg(Mat& img, Rect& rect, vector<double> disc)
 {
 	Mat X, Y;
-	Meshgrid(Range(rect.tl.x, rect.br.x) - disc[0], Range(rect.tl.y, rect.br.y) - disc[1], X, Y);
+	Point leftTop = rect.tl();
+	Point bottomeRight = rect.br();
+
+	Meshgrid(Range(leftTop.x, bottomeRight.x) - disc[0], Range(leftTop.y, bottomeRight.y) - disc[1], X, Y);
 	Mat result;
 	remap(img, result, X, Y, INTER_LINEAR);
 	return result;
