@@ -100,11 +100,7 @@ inline void LKOFlow::IterativeLKOpticalFlow(Mat& img1, Mat& img2, Point topLeft,
 	auto K = 10;
 	//	auto stopThrashold = 0.01;
 	Rect ROIRect(topLeft, bottomRight);
-
-	auto newROIRect = ROIRect;
-	newROIRect.width++;
-	newROIRect.height++;
-	auto img1Rect = img1(newROIRect);
+	auto img1Rect = img1(ROIRect);
 
 	Mat Ht, G;
 	ComputeLKFlowParms(img1, Ht, G);
@@ -129,7 +125,6 @@ inline void LKOFlow::IterativeLKOpticalFlow(Mat& img1, Mat& img2, Point topLeft,
 
 		k++;
 	}
-
 }
 
 inline void LKOFlow::ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G)
@@ -138,8 +133,8 @@ inline void LKOFlow::ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G)
 	Sobel(img, SobelX, CV_32F, 1, 0);
 	Sobel(img, SobelY, CV_32F, 0, 1);
 
-	auto X = SobelX(Rect(1, 1, SobelX.cols-1, SobelX.rows-1));
-	auto Y = SobelY(Rect(1, 1, SobelY.cols-1, SobelY.rows-1));
+	auto X = SobelX(Rect(1, 1, SobelX.cols-2, SobelX.rows-2));
+	auto Y = SobelY(Rect(1, 1, SobelY.cols-2, SobelY.rows-2));
 
 	Mat deepCopyedX,deepCopyedY;
 	X.copyTo(deepCopyedX);
@@ -188,7 +183,7 @@ inline Mat LKOFlow::ResampleImg(Mat& img, Rect& rect, vector<double> disc)
 	auto leftTop = rect.tl();
 	auto bottomeRight = rect.br();
 
-	Meshgrid(Range(leftTop.x, bottomeRight.x) - disc[0], Range(leftTop.y, bottomeRight.y) - disc[1], X, Y);
+	Meshgrid(Range(leftTop.x, bottomeRight.x - 1) - disc[0], Range(leftTop.y, bottomeRight.y - 1) - disc[1], X, Y);
 
 	Mat formatX, formatY;
 	X.convertTo(formatX, CV_32FC1);
