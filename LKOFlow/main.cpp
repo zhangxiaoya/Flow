@@ -35,6 +35,10 @@ int main()
 		waitKey(0);
 	}
 
+	Rect roi(1, 1, graImg1.cols - 2, graImg1.rows - 2);
+
+	vector<double> disc = LKOFlow::PyramidalLKOpticalFlow(graImg1, graImg2, roi);
+
 	destroyAllWindows();
 	return 0;
 }

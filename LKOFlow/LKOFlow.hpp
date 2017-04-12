@@ -54,8 +54,8 @@ vector<double> LKOFlow::PyramidalLKOpticalFlow(Mat& img1, Mat& img2, Rect& ROI)
 		double scale = pow(2, curLevel - 1);
 
 		Point topLeft;
-		topLeft.x = max((int)ceil(ROI.x / scale),2);
-		topLeft.y = max((int)ceil(ROI.y / scale),2);
+		topLeft.x = max(static_cast<int>(ceil(ROI.x / scale)),2);
+		topLeft.y = max(static_cast<int>(ceil(ROI.y / scale)),2);
 
 		Size curSize;
 		curSize.width = floor(ROISize.width / scale);
@@ -71,14 +71,23 @@ vector<double> LKOFlow::PyramidalLKOpticalFlow(Mat& img1, Mat& img2, Rect& ROI)
 	return disc;
 }
 
-void LKOFlow::GaussianPyramid(Mat& img, vector<Mat>& pyramid, int levels)
+inline void LKOFlow::GaussianPyramid(Mat& img, vector<Mat>& pyramid, int levels)
 {
-	for (int i = 0; i < levels; ++i)
+	img.copyTo(pyramid[0]);
+
+	auto scale = 2.0;
+
+	Mat srcImg = img;
+
+	for (auto i = 1; i < levels; ++i)
 	{
-		double scale = pow(2, i);
-		Mat outImage;
-		pyrDown(img, outImage, Size(img.cols / scale, img.rows / scale));
-		pyramid.push_back(outImage);
+		Mat desImg;
+		Size size(srcImg.cols / scale, srcImg.rows / scale);
+
+		pyrDown(srcImg, desImg, size);
+
+		desImg.copyTo(pyramid[i]);
+		srcImg = pyramid[i];
 	}
 }
 
