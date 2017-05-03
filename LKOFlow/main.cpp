@@ -12,36 +12,24 @@ int main()
 {
 	auto img1 = imread("1.jpg");
 	auto img2 = imread("2.jpg");
+
 	Mat graImg1;
 	Mat graImg2;
 
 	if (img1.data)
-	{
-		imshow("Image1", img1);
-		cout << img1.channels() << endl;
-		cout << img1.rows << endl;
-		cout << img1.cols << endl;
 		cvtColor(img1, graImg1, CV_BGR2GRAY);
-		cout << graImg1.channels() << endl;
-		waitKey(0);
-	}
 
 	if (img2.data)
-	{
-		imshow("Image2", img2);
-		cout << img2.channels() << endl;
 		cvtColor(img2, graImg2, CV_BGR2GRAY);
-		cout << graImg2.channels() << endl;
-		waitKey(0);
-	}
 
 	Rect roi(0, 0, graImg1.cols, graImg1.rows);
 	auto disc = LKOFlow::PyramidalLKOpticalFlow(graImg1, graImg2, roi);
 
 	destroyAllWindows();
 
-	cout << disc[0] << endl << disc[1] << endl;
-	int a;
-	cin >> a;
+	cout << "Distances:" << endl;
+	cout << "X = " << disc[0] << endl << "Y = " << disc[1] << endl;
+
+	system("pause");
 	return 0;
 }
