@@ -16,6 +16,8 @@ public:
 private:
 	static void GaussianPyramid(Mat& img, vector<Mat>& pyramid, int levels);
 
+	static void ChangeToFloat(Mat& srcImg, Mat& destImg);
+
 	static double MyNorm(const Mat& mat);
 
 	static void IterativeLKOpticalFlow(Mat& Pyramid1, Mat& Pyramid2, Point topLeft, Point bottomRight, vector<double>& disc);
@@ -31,11 +33,17 @@ private:
 	static void Meshgrid(const Range& xgv, const Range& ygv, Mat& X, Mat& Y);
 };
 
+inline void LKOFlow::ChangeToFloat(Mat& srcImg, Mat& destImg)
+{
+	if (srcImg.type() != CV_32FC1)
+		srcImg.convertTo(destImg,CV_32FC1);
+}
+
 inline vector<double> LKOFlow::PyramidalLKOpticalFlow(Mat& img1, Mat& img2, Rect& ROI)
 {
 	Mat image1, image2;
-	img1.convertTo(image1,CV_32F);
-	img2.convertTo(image2,CV_32F);
+	ChangeToFloat(img1, image1);
+	ChangeToFloat(img2, image2);
 
 	auto ROISize = ROI.size();
 
