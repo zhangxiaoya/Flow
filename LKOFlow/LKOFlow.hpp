@@ -14,6 +14,8 @@ public:
 	static vector<double> PyramidalLKOpticalFlow(Mat& img1, Mat& img2, Rect& ROI);
 
 private:
+	static void GaussianDownSample(vector<Mat>::const_reference srcMat, vector<Mat>::reference destMat);
+
 	static void GaussianPyramid(Mat& img, vector<Mat>& pyramid, int levels);
 
 	static void ChangeToFloat(Mat& srcImg, Mat& destImg);
@@ -84,23 +86,39 @@ inline vector<double> LKOFlow::PyramidalLKOpticalFlow(Mat& img1, Mat& img2, Rect
 	return distance;
 }
 
+inline void LKOFlow::GaussianDownSample(vector<Mat>::const_reference src_mat, vector<Mat>::reference dest_mat)
+{
+	Mat kernel = (Mat_<float>(1, 5) << 0.0625, 0.2500, 0.3750, 0.2500, 0.0625);
+	Mat kernelT = kernel.t();
+
+	Mat img, imgT;
+	filter2D(src_mat, img, CV_32F, kernel, Point(-1, -1), 0, BORDER_REFLECT);
+	filter2D(img, imgT, CV_32F, kernelT, Point(-1, -1), 0, BORDER_REFLECT);
+
+	Size size(ceil(src_mat.cols / 2.0), ceil(src_mat.rows / 2.0));
+	Mat tempImg(size, CV_32FC1);
+
+	for (auto r = 0; r < imgT.rows; r += 2)
+	{
+		auto rowSrcMat = imgT.ptr<float>(r);
+		auto rowDstmat = tempImg.ptr<float>(ceil(r / 2.0));
+
+		for (auto c = 0; c < imgT.cols; c += 2)
+		{
+			int idx = ceil(c / 2.0);
+			rowDstmat[idx] = rowSrcMat[c];
+		}
+	}
+
+	tempImg.copyTo(dest_mat);
+}
+
 inline void LKOFlow::GaussianPyramid(Mat& img, vector<Mat>& pyramid, int levels)
 {
 	img.copyTo(pyramid[0]);
 
-	auto scale = 2.0;
-	auto srcImg = img;
-
 	for (auto i = 1; i < levels; ++i)
-	{
-		Mat desImg;
-		Size size(srcImg.cols / scale, srcImg.rows / scale);
-
-		pyrDown(srcImg, desImg, size);
-
-		desImg.copyTo(pyramid[i]);
-		srcImg = pyramid[i];
-	}
+		GaussianDownSample(pyramid[i - 1], pyramid[i]);
 }
 
 inline double LKOFlow::MyNorm(const Mat& mat)
