@@ -4,6 +4,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 #include <cmath>
+#include "Utils.hpp"
 
 using namespace std;
 using namespace cv;
@@ -149,7 +150,7 @@ inline void LKOFlow::IterativeLKOpticalFlow(Mat& img1, Mat& img2, Point topLeft,
 		auto resample_img = ResampleImg(img2, ROIRect, distance);
 		Mat It = img1Rect - resample_img;
 
-		auto newIt = It.reshape(0, It.rows * It.cols);
+		auto newIt = Utils::ReshapedMatColumnFirst(It);
 
 		Mat b = Ht * newIt;
 
@@ -187,8 +188,8 @@ inline void LKOFlow::ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G)
 	rectSobelX.copyTo(deepCopyedX);
 	rectSobelY.copyTo(deepCopyedY);
 
-	auto reshapedX = deepCopyedX.reshape(0, deepCopyedX.rows * deepCopyedX.cols);
-	auto reshapedY = deepCopyedY.reshape(0, deepCopyedY.rows * deepCopyedY.cols);
+	auto reshapedX = Utils::ReshapedMatColumnFirst(deepCopyedX);
+	auto reshapedY = Utils::ReshapedMatColumnFirst(deepCopyedY);
 
 	auto H = MergeTwoCols(reshapedX, reshapedY);
 	Ht = H.t();
