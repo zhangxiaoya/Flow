@@ -21,8 +21,6 @@ private:
 
 	static void ChangeToFloat(Mat& srcImg, Mat& destImg);
 
-	static double MyNorm(const Mat& mat);
-
 	static void IterativeLKOpticalFlow(Mat& Pyramid1, Mat& Pyramid2, Point topLeft, Point bottomRight, vector<double>& disc);
 
 	static void ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G);
@@ -122,15 +120,6 @@ inline void LKOFlow::GaussianPyramid(Mat& img, vector<Mat>& pyramid, int levels)
 		GaussianDownSample(pyramid[i - 1], pyramid[i]);
 }
 
-inline double LKOFlow::MyNorm(const Mat& mat)
-{
-	/*
-	 * special use: Mat is a (2*1) vector, only get norm of this vector
-	 */
-	double sum = mat.at<float>(0, 0) * mat.at<float>(0, 0) + mat.at<float>(1, 0) * mat.at<float>(1, 0);
-	return sqrt(sum);
-}
-
 inline void LKOFlow::IterativeLKOpticalFlow(Mat& img1, Mat& img2, Point topLeft, Point bottomRight, vector<double>& distance)
 {
 	auto oldDistance = distance;
@@ -154,12 +143,8 @@ inline void LKOFlow::IterativeLKOpticalFlow(Mat& img1, Mat& img2, Point topLeft,
 
 		Mat b = Ht * newIt;
 
-		Mat invertG;
-		invert(G, invertG);
-
-		Mat dc = invertG * b;
-
-		normDistrance = MyNorm(dc);
+		Mat dc = G.inv() * b;
+		normDistrance = norm(dc);
 
 		distance[0] += dc.at<float>(0, 0);
 		distance[1] += dc.at<float>(1, 0);
