@@ -33,7 +33,7 @@ private:
 
 	static Mat ResampleImg(Mat& img, Rect& rect, vector<double> disc);
 
-	static void Meshgrid(const Range& xgv, const Range& ygv, Mat& X, Mat& Y);
+	static void Meshgrid(const float lefTopX, const float rightBottomX, const float lefTopY, const float rightBottomY, Mat& X, Mat& Y);
 };
 
 inline void LKOFlow::ChangeToFloat(Mat& srcImg, Mat& destImg)
@@ -231,25 +231,21 @@ inline Mat LKOFlow::ResampleImg(Mat& img, Rect& rect, vector<double> disc)
 	auto leftTop = rect.tl();
 	auto bottomeRight = rect.br();
 
-	Meshgrid(Range(leftTop.x, bottomeRight.x - 1) - disc[0], Range(leftTop.y, bottomeRight.y - 1) - disc[1], X, Y);
-
-	Mat formatX, formatY;
-	X.convertTo(formatX, CV_32FC1);
-	Y.convertTo(formatY, CV_32FC1);
+	Meshgrid(leftTop.x - disc[0], bottomeRight.x - 1 - disc[0], leftTop.y - disc[1], bottomeRight.y - 1 - disc[1], X, Y);
 
 	Mat result;
-	remap(img, result, formatX, formatY, INTER_LINEAR);
+	remap(img, result, X, Y, INTER_LINEAR);
 
 	return result;
 }
 
-inline void LKOFlow::Meshgrid(const Range& xgv, const Range& ygv, Mat& X, Mat& Y)
+inline void LKOFlow::Meshgrid(const float lefTopX, const float rightBottomX, const float lefTopY, const float rightBottomY, Mat& X, Mat& Y)
 {
-	vector<int> t_x, t_y;
+	vector<float> t_x, t_y;
 
-	for (auto i = xgv.start; i <= xgv.end; i++)
+	for (auto i = lefTopX; (i - rightBottomX) < 0.001; i++)
 		t_x.push_back(i);
-	for (auto j = ygv.start; j <= ygv.end; j++)
+	for (auto j = lefTopY; (j - rightBottomY) < 0.001; j++)
 		t_y.push_back(j);
 
 	cv::repeat(cv::Mat(t_x).t(), t_y.size(), 1, X);
