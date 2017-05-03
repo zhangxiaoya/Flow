@@ -173,8 +173,15 @@ inline void LKOFlow::ComputeLKFlowParms(Mat& img, Mat& Ht, Mat& G)
 	Sobel(img, SobelX, CV_32F, 1, 0);
 	Sobel(img, SobelY, CV_32F, 0, 1);
 
-	auto rectSobelX = SobelX(Rect(1, 1, SobelX.cols - 2, SobelX.rows - 2));
-	auto rectSobelY = SobelY(Rect(1, 1, SobelY.cols - 2, SobelY.rows - 2));
+	Mat kernelX = (Mat_<char>(3, 3) << 1, 0, -1, 2, 0, -2, 1, 0, -1);
+	Mat kernelY = kernelX.t();
+
+	Mat SSobelX, SSobelY;
+	filter2D(img, SSobelX, CV_32F, kernelX, Point(-1, -1), 0, cv::BORDER_CONSTANT);
+	filter2D(img, SSobelY, CV_32F, kernelY, Point(-1, -1), 0, cv::BORDER_CONSTANT);
+
+	auto rectSobelX = SSobelX(Rect(1, 1, SobelX.cols - 2, SobelX.rows - 2));
+	auto rectSobelY = SSobelY(Rect(1, 1, SobelY.cols - 2, SobelY.rows - 2));
 
 	Mat deepCopyedX, deepCopyedY;
 	rectSobelX.copyTo(deepCopyedX);
