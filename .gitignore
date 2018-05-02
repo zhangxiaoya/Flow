@@ -9,6 +9,10 @@
 # Ignorw video file
 *.avi
 
+# ignore clion files
+.idea/
+cmake-build-debug/
+
 # Ignore class diagram file
 *.cd
 
