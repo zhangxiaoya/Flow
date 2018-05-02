@@ -10,8 +10,22 @@ using namespace std;
 
 int main()
 {
-	auto img1 = imread("1.jpg");
-	auto img2 = imread("2.jpg");
+	if(argc < 3)
+	{
+		cout << "Usage: " << argv[0] << " : image_name_1 image_name_2" << endl;
+		return -1;
+	}
+	auto img1 = imread(argv[1]);
+	if(img1.empty())
+	{
+		cout << "Open image " << argv[1] << " failed!" << endl;
+		return -1;
+	}
+	auto img2 = imread(argv[2]);
+	if(img2.empty())
+	{
+		cout << "Open image " << argv[2] << " failed!" << endl;
+	}
 
 	Mat graImg1;
 	Mat graImg2;
